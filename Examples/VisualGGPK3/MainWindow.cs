@@ -19,6 +19,7 @@ using Pfim;
 
 using SystemExtensions;
 
+using VisualGGPK3.Patterns;
 using VisualGGPK3.TreeItems;
 
 namespace VisualGGPK3;
@@ -32,6 +33,11 @@ public sealed class MainWindow : Form {
 	private readonly TextArea TextPanel = new() { ReadOnly = true, Text = "This program hasn't been completed yet" };
 	private readonly ImageView ImagePanel = new();
 	private readonly GridView DatPanel = new();
+
+	// Pattern system
+	private readonly PatternManager _patternManager = new();
+	private readonly BackupManager _backupManager = new();
+	private PatternMatcher? _patternMatcher;
 
 	private string? imageName;
 	private ITreeItem? clickedItem;
@@ -194,7 +200,77 @@ public sealed class MainWindow : Form {
 			if (bundles is not null)
 				bundles.Expanded = true;
 			BundleTree.DataStore = bundles;
+
+			// Initialize pattern matcher
+			_patternMatcher = new PatternMatcher(_backupManager);
+
+			// Create main menu
+			Menu = new MenuBar {
+				Items = {
+					new SubMenuItem {
+						Text = "&File",
+						Items = {
+							new ButtonMenuItem(OnOpenPatternManager) { Text = "&Pattern Manager...", Shortcut = Keys.Control | Keys.P },
+							new SeparatorMenuItem(),
+							new ButtonMenuItem((s, e) => Close()) { Text = "E&xit" }
+						}
+					}
+				}
+			};
 		}
+	}
+
+	private void OnOpenPatternManager(object? sender, EventArgs e) {
+		if (_patternMatcher is null) {
+			MessageBox.Show(this, "Please load a GGPK file first", "Error", MessageBoxType.Error);
+			return;
+		}
+
+		// Get root directory for pattern application
+		DirectoryTreeItem? rootDir = null;
+		Func<string, FileTreeItem?>? fileResolver = null;
+
+		if (BundleTree.DataStore is BundleDirectoryTreeItem bundleRoot) {
+			rootDir = bundleRoot;
+			fileResolver = path => FindFileInTree(bundleRoot, path);
+		} else if (GGPKTree.DataStore is GGPKDirectoryTreeItem ggpkRoot) {
+			rootDir = ggpkRoot;
+			fileResolver = path => FindFileInTree(ggpkRoot, path);
+		}
+
+		var dialog = new PatternManagerDialog(_patternManager, _patternMatcher, _backupManager, rootDir, fileResolver);
+		dialog.ShowModal(this);
+
+		// Refresh trees after pattern application
+		if (GGPKTree.DataStore is GGPKDirectoryTreeItem g) {
+			var bd2 = g.ChildItems.FirstOrDefault(t => t.Text == "Bundles2");
+			if (bd2 is GGPKDirectoryTreeItem gd) {
+				gd._ChildItems = null;
+				GGPKTree.RefreshItem(gd);
+			}
+		}
+		OnSelectionChanged(BundleTree, EventArgs.Empty);
+	}
+
+	private static FileTreeItem? FindFileInTree(DirectoryTreeItem root, string path) {
+		var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+		ITreeItem? current = root;
+
+		foreach (var part in parts) {
+			if (current is not DirectoryTreeItem dir)
+				return null;
+
+			// Ensure directory is initialized
+			if (!dir.Initialized) {
+				dir.Expanded = true;
+			}
+
+			current = dir.ChildItems.FirstOrDefault(c =>
+				(c is FileTreeItem f && f.Name == part) ||
+				(c is DirectoryTreeItem d && d.Name == part));
+		}
+
+		return current as FileTreeItem;
 	}
 
 	private void OnSelectionChanged(object? sender, EventArgs _) {
