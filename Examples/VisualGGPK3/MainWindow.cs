@@ -30,7 +30,7 @@ public sealed class MainWindow : Form {
 	private readonly TreeView GGPKTree = new();
 	private readonly TreeView BundleTree = new();
 #pragma warning restore CS0618
-	private readonly TextArea TextPanel = new() { ReadOnly = true, Text = "This program hasn't been completed yet" };
+	private readonly TextArea TextPanel = new() { ReadOnly = true, Text = L.ProgramNotCompleted };
 	private readonly ImageView ImagePanel = new();
 	private readonly GridView DatPanel = new();
 
@@ -102,7 +102,7 @@ public sealed class MainWindow : Form {
 		};
 
 		var loading = new TreeItemCollection() {
-			new TreeItem() { Text = "Loading . . ." }
+			new TreeItem() { Text = L.Loading }
 		};
 		GGPKTree.DataStore = loading;
 		BundleTree.DataStore = loading;
@@ -117,7 +117,7 @@ public sealed class MainWindow : Form {
 				using var ofd = new OpenFileDialog() {
 					FileName = "Content.ggpk",
 					Filters = {
-						new("GGPK/Index File", ".ggpk", ".bin"),
+						new(L.GGPKIndexFile, ".ggpk", ".bin"),
 						allFilesFilters
 					}
 				};
@@ -151,7 +151,7 @@ public sealed class MainWindow : Form {
 						return Index.ParsePaths();
 					} catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException) { // No _.index.bin
 						Application.Instance.AsyncInvoke(() =>
-							MessageBox.Show(this, ex.GetNameAndMessage(), "Warning", MessageBoxType.Warning));
+							MessageBox.Show(this, ex.GetNameAndMessage(), L.Warning, MessageBoxType.Warning));
 						Ggpk = new GGPK(path);
 						return 0;
 					}
@@ -163,13 +163,13 @@ public sealed class MainWindow : Form {
 			var buildTreeTask = Index is null || failed == Index.Files.Count ? Task.FromResult<BundleDirectoryTreeItem>(null!) :
 				Task.Run(() => (BundleDirectoryTreeItem)Index.BuildTree(BundleDirectoryTreeItem.GetFuncCreateInstance(BundleTree), BundleFileTreeItem.CreateInstance, true));
 			if (failed != 0)
-				TextPanel.Text += $"\n\nWarning: There're {failed} files failed to parse the path, your ggpk file may be broken.";
+				TextPanel.Text += string.Format(L.FailedToParsePaths, failed);
 
 			var menu = new ContextMenu(
-				new ButtonMenuItem(OnExtractClicked) { Text = "Extract" },
-				new ButtonMenuItem(OnReplaceClicked) { Text = "Replace" },
-				new ButtonMenuItem(OnCopyPathClicked) { Text = "Copy Path" },
-				new ButtonMenuItem(OnExportDdsClicked) { Text = "Export .dds to .png" }
+				new ButtonMenuItem(OnExtractClicked) { Text = L.Extract },
+				new ButtonMenuItem(OnReplaceClicked) { Text = L.Replace },
+				new ButtonMenuItem(OnCopyPathClicked) { Text = L.CopyPath },
+				new ButtonMenuItem(OnExportDdsClicked) { Text = L.ExportDdsToPng }
 			);
 			GGPKTree.MouseUp += (s, e) => {
 				if (e.Buttons == MouseButtons.Alternate && GGPKTree.GetNodeAt(e.Location) is ITreeItem item) {
@@ -183,7 +183,7 @@ public sealed class MainWindow : Form {
 					menu.Show(BundleTree);
 				}
 			};
-			var menu2 = new ContextMenu(new ButtonMenuItem(OnSaveAsPngClicked) { Text = "Save as png" });
+			var menu2 = new ContextMenu(new ButtonMenuItem(OnSaveAsPngClicked) { Text = L.SaveAsPng });
 			ImagePanel.MouseUp += (s, e) => {
 				if (e.Buttons == MouseButtons.Alternate)
 					menu2.Show(ImagePanel, e.Location);
@@ -208,11 +208,13 @@ public sealed class MainWindow : Form {
 			Menu = new MenuBar {
 				Items = {
 					new SubMenuItem {
-						Text = "&File",
+						Text = L.MenuFile,
 						Items = {
-							new ButtonMenuItem(OnOpenPatternManager) { Text = "&Pattern Manager...", Shortcut = Keys.Control | Keys.P },
+							new ButtonMenuItem(OnOpenPatternManager) { Text = L.MenuPatternManager, Shortcut = Keys.Control | Keys.P },
+							new ButtonMenuItem(OnOpenAdvancedSearch) { Text = L.MenuAdvancedSearch, Shortcut = Keys.Control | Keys.F },
+							new ButtonMenuItem(OnOpenDatabaseCompare) { Text = L.MenuDatabaseCompare, Shortcut = Keys.Control | Keys.D },
 							new SeparatorMenuItem(),
-							new ButtonMenuItem((s, e) => Close()) { Text = "E&xit" }
+							new ButtonMenuItem((s, e) => Close()) { Text = L.MenuExit }
 						}
 					}
 				}
@@ -220,9 +222,45 @@ public sealed class MainWindow : Form {
 		}
 	}
 
+	private void OnOpenAdvancedSearch(object? sender, EventArgs e) {
+		DirectoryTreeItem? rootDir = null;
+		Action<FileTreeItem>? onFileSelected = null;
+
+		if (BundleTree.DataStore is BundleDirectoryTreeItem bundleRoot) {
+			rootDir = bundleRoot;
+			onFileSelected = file => {
+				// Select file in tree
+				BundleTree.SelectedItem = file;
+				OnSelectionChanged(BundleTree, EventArgs.Empty);
+			};
+		} else if (GGPKTree.DataStore is GGPKDirectoryTreeItem ggpkRoot) {
+			rootDir = ggpkRoot;
+			onFileSelected = file => {
+				GGPKTree.SelectedItem = file;
+				OnSelectionChanged(GGPKTree, EventArgs.Empty);
+			};
+		}
+
+		var dialog = new AdvancedSearchDialog(rootDir, onFileSelected);
+		dialog.ShowModal(this);
+	}
+
+	private void OnOpenDatabaseCompare(object? sender, EventArgs e) {
+		DirectoryTreeItem? rootDir = null;
+
+		if (BundleTree.DataStore is BundleDirectoryTreeItem bundleRoot) {
+			rootDir = bundleRoot;
+		} else if (GGPKTree.DataStore is GGPKDirectoryTreeItem ggpkRoot) {
+			rootDir = ggpkRoot;
+		}
+
+		var dialog = new DatabaseCompareDialog(rootDir);
+		dialog.ShowModal(this);
+	}
+
 	private void OnOpenPatternManager(object? sender, EventArgs e) {
 		if (_patternMatcher is null) {
-			MessageBox.Show(this, "Please load a GGPK file first", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.PleaseLoadGGPK, L.Error, MessageBoxType.Error);
 			return;
 		}
 
@@ -293,7 +331,7 @@ public sealed class MainWindow : Form {
 						var span = fileItem.Read().Span;
 #if Windows
 						if (span.Length > 204800) {
-							MessageBox.Show(this, "This text file is too large, only the first 100KB will be shown", "Warning", MessageBoxButtons.OK, MessageBoxType.Warning);
+							MessageBox.Show(this, L.TextFileTooLarge, L.Warning, MessageBoxButtons.OK, MessageBoxType.Warning);
 							span = span[..102400];
 						}
 #endif
@@ -379,7 +417,7 @@ public sealed class MainWindow : Form {
 			var span = fi.Read().Span;
 			using (var f = File.OpenHandle(sfd.FileName, FileMode.Create, FileAccess.Write, FileShare.None, FileOptions.None, span.Length))
 				RandomAccess.Write(f, span, 0);
-			MessageBox.Show(this, $"Extracted {span.Length} bytes to\r\n{sfd.FileName}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, string.Format(L.ExtractedBytes, span.Length, sfd.FileName), L.Done, MessageBoxType.Information);
 		} else if (clickedItem is DirectoryTreeItem di) {
 			var sfd = new SaveFileDialog() {
 				CheckFileExists = false,
@@ -389,7 +427,7 @@ public sealed class MainWindow : Form {
 			if (sfd.ShowDialog(this) != DialogResult.Ok)
 				return;
 			var dir = Directory.CreateDirectory(Path.GetDirectoryName(sfd.FileName)!).FullName;
-			MessageBox.Show(this, $"Extracted {di.Extract(dir)} files to\r\n{dir}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, string.Format(L.ExtractedFiles, di.Extract(dir), dir), L.Done, MessageBoxType.Information);
 		}
 	}
 
@@ -407,7 +445,7 @@ public sealed class MainWindow : Form {
 				return;
 			var b = File.ReadAllBytes(ofd.FileName);
 			fi.Write(b);
-			MessageBox.Show(this, $"Replaced {b.Length} bytes from\r\n{ofd.FileName}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, string.Format(L.ReplacedBytes, b.Length, ofd.FileName), L.Done, MessageBoxType.Information);
 		} else if (clickedItem is DirectoryTreeItem di) {
 			using var ofd = new OpenFileDialog() {
 				CheckFileExists = false,
@@ -417,7 +455,7 @@ public sealed class MainWindow : Form {
 			if (ofd.ShowDialog(this) != DialogResult.Ok)
 				return;
 			var dir = Path.GetDirectoryName(ofd.FileName)!;
-			MessageBox.Show(this, $"Replaced {di.Replace(dir)} files from\r\n{dir}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, string.Format(L.ReplacedFiles, di.Replace(dir), dir), L.Done, MessageBoxType.Information);
 		}
 
 		var bd2 = (GGPKTree.DataStore as GGPKDirectoryTreeItem)?.ChildItems.FirstOrDefault(t => t.Text == "Bundles2");
@@ -453,7 +491,7 @@ public sealed class MainWindow : Form {
 	private void OnExportDdsClicked(object? sender, EventArgs _) {
 		if (clickedItem is FileTreeItem fi) {
 			if (fi.Format != FileTreeItem.DataFormat.DdsImage) {
-				MessageBox.Show(this, "Selected file is not a dds image", "Error", MessageBoxType.Error);
+				MessageBox.Show(this, L.NotDdsImage, L.Error, MessageBoxType.Error);
 				return;
 			}
 			var sfd = new SaveFileDialog() {
@@ -467,7 +505,7 @@ public sealed class MainWindow : Form {
 				return;
 			Directory.CreateDirectory(Path.GetDirectoryName(sfd.FileName)!);
 			GetDdsBitmap(fi.Read().Span).Save(sfd.FileName, Eto.Drawing.ImageFormat.Png);
-			MessageBox.Show(this, $"Saved {sfd.FileName}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, string.Format(L.SavedFile, sfd.FileName), L.Done, MessageBoxType.Information);
 		} else if (clickedItem is DirectoryTreeItem di) {
 			var sfd = new SaveFileDialog() {
 				CheckFileExists = false,
@@ -489,13 +527,13 @@ public sealed class MainWindow : Form {
 				}
 			}, ".dds");
 			if (failed == 0)
-				MessageBox.Show(this, $"Exported {count} files to\r\n{dir}", "Done", MessageBoxType.Information);
+				MessageBox.Show(this, string.Format(L.ExportedFiles, count, dir), L.Done, MessageBoxType.Information);
 			else
-				MessageBox.Show(this, $"Exported {count} files to\r\n{dir}\r\n{failed} files failed!", "Done", MessageBoxType.Warning);
+				MessageBox.Show(this, string.Format(L.ExportedFilesWithFailed, count, dir, failed), L.Done, MessageBoxType.Warning);
 		}
 	}
 
-	private static readonly FileFilter allFilesFilters = new("All Files", "*");
+	private static readonly FileFilter allFilesFilters = new(L.AllFiles, "*");
 
 	private void OnDragEnter(object? sender, DragEventArgs e) {
 		if (Index is not null && e.Data.ContainsUris)
@@ -523,14 +561,14 @@ public sealed class MainWindow : Form {
 					? GGPK.Replace((Ggpk ?? throw ThrowHelper.Create<InvalidOperationException>("GGPK replacing is not supported in Steam/Epic mode"))
 						.Root, zip.Entries)
 					: LibBundle3.Index.Replace(Index!, zip.Entries);
-			MessageBox.Show(this, $"Replaced {count} files!", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, string.Format(L.ReplacedFiles, count, ""), L.Done, MessageBoxType.Information);
 		} catch (Exception ex) {
-			MessageBox.Show(this, ex.ToString(), "Error", MessageBoxType.Error);
+			MessageBox.Show(this, ex.ToString(), L.Error, MessageBoxType.Error);
 		}
 
 		return;
 	err:
-		MessageBox.Show(this, "Only a single zip file is allowed", "Error", MessageBoxType.Error);
+		MessageBox.Show(this, L.OnlyZipAllowed, L.Error, MessageBoxType.Error);
 		return;
 	}
 

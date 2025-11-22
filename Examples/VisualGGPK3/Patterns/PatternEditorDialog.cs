@@ -24,28 +24,28 @@ public sealed class PatternEditorDialog : Dialog<SearchReplacePattern?> {
 
 	public PatternEditorDialog(SearchReplacePattern? existingPattern = null) {
 		_existingPattern = existingPattern;
-		Title = existingPattern is null ? "New Pattern" : "Edit Pattern";
+		Title = existingPattern is null ? L.NewPattern : L.EditPattern;
 		MinimumSize = new Size(500, 600);
 		Padding = new Padding(10);
 
 		// Initialize controls
-		_nameBox = new TextBox { PlaceholderText = "Pattern name" };
+		_nameBox = new TextBox { PlaceholderText = L.PatternNamePlaceholder };
 		_descriptionBox = new TextArea { Height = 60 };
-		_filePatternBox = new TextBox { PlaceholderText = "e.g., *.txt or Data/**/*.dat (empty = all files)" };
+		_filePatternBox = new TextBox { PlaceholderText = L.FilePatternPlaceholder };
 
 		_typeDropDown = new DropDown {
 			Items = {
-				new ListItem { Text = "Hex (bytes)", Key = PatternType.Hex.ToString() },
-				new ListItem { Text = "Text (UTF-8)", Key = PatternType.Text.ToString() },
-				new ListItem { Text = "Text (UTF-16)", Key = PatternType.TextUtf16.ToString() }
+				new ListItem { Text = L.HexBytes, Key = PatternType.Hex.ToString() },
+				new ListItem { Text = L.TextUtf8, Key = PatternType.Text.ToString() },
+				new ListItem { Text = L.TextUtf16, Key = PatternType.TextUtf16.ToString() }
 			}
 		};
 
 		_searchBox = new TextArea { Height = 100 };
 		_replaceBox = new TextArea { Height = 100 };
-		_replaceAllCheck = new CheckBox { Text = "Replace all occurrences", Checked = true };
-		_enabledCheck = new CheckBox { Text = "Enabled", Checked = true };
-		_tagsBox = new TextBox { PlaceholderText = "tag1, tag2, tag3" };
+		_replaceAllCheck = new CheckBox { Text = L.ReplaceAllOccurrences, Checked = true };
+		_enabledCheck = new CheckBox { Text = L.Enabled, Checked = true };
+		_tagsBox = new TextBox { PlaceholderText = L.TagsPlaceholder };
 
 		// Populate with existing pattern
 		if (existingPattern != null) {
@@ -63,13 +63,13 @@ public sealed class PatternEditorDialog : Dialog<SearchReplacePattern?> {
 		}
 
 		// Buttons
-		var okButton = new Button { Text = "OK" };
+		var okButton = new Button { Text = L.OK };
 		okButton.Click += OnOkClicked;
 
-		var cancelButton = new Button { Text = "Cancel" };
+		var cancelButton = new Button { Text = L.Cancel };
 		cancelButton.Click += (s, e) => Close(null);
 
-		var testButton = new Button { Text = "Test Pattern" };
+		var testButton = new Button { Text = L.TestPattern };
 		testButton.Click += OnTestClicked;
 
 		// Layout
@@ -77,28 +77,28 @@ public sealed class PatternEditorDialog : Dialog<SearchReplacePattern?> {
 			Spacing = 10,
 			HorizontalContentAlignment = HorizontalAlignment.Stretch,
 			Items = {
-				new StackLayoutItem(new Label { Text = "Name:" }),
+				new StackLayoutItem(new Label { Text = L.LabelName }),
 				new StackLayoutItem(_nameBox),
 
-				new StackLayoutItem(new Label { Text = "Description:" }),
+				new StackLayoutItem(new Label { Text = L.LabelDescription }),
 				new StackLayoutItem(_descriptionBox),
 
-				new StackLayoutItem(new Label { Text = "File Pattern (glob):" }),
+				new StackLayoutItem(new Label { Text = L.LabelFilePattern }),
 				new StackLayoutItem(_filePatternBox),
 
-				new StackLayoutItem(new Label { Text = "Pattern Type:" }),
+				new StackLayoutItem(new Label { Text = L.LabelPatternType }),
 				new StackLayoutItem(_typeDropDown),
 
-				new StackLayoutItem(new Label { Text = "Search Pattern:" }),
+				new StackLayoutItem(new Label { Text = L.LabelSearchPattern }),
 				new StackLayoutItem(_searchBox),
 
-				new StackLayoutItem(new Label { Text = "Replace With:" }),
+				new StackLayoutItem(new Label { Text = L.LabelReplaceWith }),
 				new StackLayoutItem(_replaceBox),
 
 				new StackLayoutItem(_replaceAllCheck),
 				new StackLayoutItem(_enabledCheck),
 
-				new StackLayoutItem(new Label { Text = "Tags (comma-separated):" }),
+				new StackLayoutItem(new Label { Text = L.LabelTags }),
 				new StackLayoutItem(_tagsBox),
 
 				new StackLayoutItem(new StackLayout {
@@ -121,12 +121,12 @@ public sealed class PatternEditorDialog : Dialog<SearchReplacePattern?> {
 	private void OnOkClicked(object? sender, EventArgs e) {
 		// Validate
 		if (string.IsNullOrWhiteSpace(_nameBox.Text)) {
-			MessageBox.Show(this, "Please enter a pattern name", "Validation Error", MessageBoxType.Warning);
+			MessageBox.Show(this, L.EnterPatternName, L.ValidationError, MessageBoxType.Warning);
 			return;
 		}
 
 		if (string.IsNullOrWhiteSpace(_searchBox.Text)) {
-			MessageBox.Show(this, "Please enter a search pattern", "Validation Error", MessageBoxType.Warning);
+			MessageBox.Show(this, L.EnterSearchPattern, L.ValidationError, MessageBoxType.Warning);
 			return;
 		}
 
@@ -136,7 +136,7 @@ public sealed class PatternEditorDialog : Dialog<SearchReplacePattern?> {
 			_ = testPattern.GetSearchBytes();
 			_ = testPattern.GetReplaceBytes();
 		} catch (Exception ex) {
-			MessageBox.Show(this, $"Invalid pattern: {ex.Message}", "Validation Error", MessageBoxType.Error);
+			MessageBox.Show(this, string.Format(L.InvalidPattern, ex.Message), L.ValidationError, MessageBoxType.Error);
 			return;
 		}
 
@@ -149,14 +149,12 @@ public sealed class PatternEditorDialog : Dialog<SearchReplacePattern?> {
 			var searchBytes = pattern.GetSearchBytes();
 			var replaceBytes = pattern.GetReplaceBytes();
 
-			var message = $"Search Pattern ({searchBytes.Length} bytes):\n" +
-				$"{BitConverter.ToString(searchBytes)}\n\n" +
-				$"Replace Pattern ({replaceBytes.Length} bytes):\n" +
-				$"{BitConverter.ToString(replaceBytes)}";
+			var message = string.Format(L.PatternTestResult, searchBytes.Length, BitConverter.ToString(searchBytes),
+				replaceBytes.Length, BitConverter.ToString(replaceBytes));
 
-			MessageBox.Show(this, message, "Pattern Test", MessageBoxType.Information);
+			MessageBox.Show(this, message, L.PatternTest, MessageBoxType.Information);
 		} catch (Exception ex) {
-			MessageBox.Show(this, $"Invalid pattern: {ex.Message}", "Pattern Test", MessageBoxType.Error);
+			MessageBox.Show(this, string.Format(L.InvalidPattern, ex.Message), L.PatternTest, MessageBoxType.Error);
 		}
 	}
 

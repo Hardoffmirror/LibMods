@@ -38,7 +38,7 @@ public sealed class PatternManagerDialog : Dialog {
 		_rootDirectory = rootDirectory;
 		_fileResolver = fileResolver;
 
-		Title = "Pattern Manager";
+		Title = L.PatternManager;
 		MinimumSize = new Size(800, 600);
 		Padding = new Padding(10);
 
@@ -49,31 +49,31 @@ public sealed class PatternManagerDialog : Dialog {
 		};
 
 		_patternGrid.Columns.Add(new GridColumn {
-			HeaderText = "Enabled",
+			HeaderText = L.ColEnabled,
 			DataCell = new CheckBoxCell { Binding = Binding.Property<PatternGridItem, bool?>(i => i.IsEnabled) },
 			Width = 60
 		});
 
 		_patternGrid.Columns.Add(new GridColumn {
-			HeaderText = "Name",
+			HeaderText = L.ColName,
 			DataCell = new TextBoxCell { Binding = Binding.Property<PatternGridItem, string>(i => i.Name) },
 			Width = 150
 		});
 
 		_patternGrid.Columns.Add(new GridColumn {
-			HeaderText = "Type",
+			HeaderText = L.ColType,
 			DataCell = new TextBoxCell { Binding = Binding.Property<PatternGridItem, string>(i => i.Type) },
 			Width = 80
 		});
 
 		_patternGrid.Columns.Add(new GridColumn {
-			HeaderText = "File Pattern",
+			HeaderText = L.ColFilePattern,
 			DataCell = new TextBoxCell { Binding = Binding.Property<PatternGridItem, string>(i => i.FilePattern) },
 			Width = 120
 		});
 
 		_patternGrid.Columns.Add(new GridColumn {
-			HeaderText = "Description",
+			HeaderText = L.ColDescription,
 			DataCell = new TextBoxCell { Binding = Binding.Property<PatternGridItem, string>(i => i.Description) },
 			Width = 200
 		});
@@ -81,58 +81,58 @@ public sealed class PatternManagerDialog : Dialog {
 		_patternGrid.CellDoubleClick += OnPatternDoubleClick;
 
 		// Status bar
-		_statusLabel = new Label { Text = "Ready" };
+		_statusLabel = new Label { Text = L.Ready };
 		_progressBar = new ProgressBar { Visible = false };
 
 		// Toolbar buttons
-		var newButton = new Button { Text = "New" };
+		var newButton = new Button { Text = L.New };
 		newButton.Click += OnNewPattern;
 
-		var editButton = new Button { Text = "Edit" };
+		var editButton = new Button { Text = L.Edit };
 		editButton.Click += OnEditPattern;
 
-		var deleteButton = new Button { Text = "Delete" };
+		var deleteButton = new Button { Text = L.Delete };
 		deleteButton.Click += OnDeletePattern;
 
-		var duplicateButton = new Button { Text = "Duplicate" };
+		var duplicateButton = new Button { Text = L.Duplicate };
 		duplicateButton.Click += OnDuplicatePattern;
 
-		var moveUpButton = new Button { Text = "Up" };
+		var moveUpButton = new Button { Text = L.Up };
 		moveUpButton.Click += OnMoveUp;
 
-		var moveDownButton = new Button { Text = "Down" };
+		var moveDownButton = new Button { Text = L.Down };
 		moveDownButton.Click += OnMoveDown;
 
-		var applyButton = new Button { Text = "Apply Selected" };
+		var applyButton = new Button { Text = L.ApplySelected };
 		applyButton.Click += OnApplySelected;
 
-		var applyAllButton = new Button { Text = "Apply All Enabled" };
+		var applyAllButton = new Button { Text = L.ApplyAllEnabled };
 		applyAllButton.Click += OnApplyAll;
 
-		var searchButton = new Button { Text = "Search" };
+		var searchButton = new Button { Text = L.Search };
 		searchButton.Click += OnSearch;
 
 		// File operations
-		var loadButton = new Button { Text = "Load" };
+		var loadButton = new Button { Text = L.Load };
 		loadButton.Click += OnLoad;
 
-		var saveButton = new Button { Text = "Save" };
+		var saveButton = new Button { Text = L.Save };
 		saveButton.Click += OnSave;
 
-		var saveAsButton = new Button { Text = "Save As" };
+		var saveAsButton = new Button { Text = L.SaveAs };
 		saveAsButton.Click += OnSaveAs;
 
-		var importButton = new Button { Text = "Import" };
+		var importButton = new Button { Text = L.Import };
 		importButton.Click += OnImport;
 
-		var exportButton = new Button { Text = "Export" };
+		var exportButton = new Button { Text = L.Export };
 		exportButton.Click += OnExport;
 
 		// Backup operations
-		var showBackupsButton = new Button { Text = "Backups" };
+		var showBackupsButton = new Button { Text = L.Backups };
 		showBackupsButton.Click += OnShowBackups;
 
-		var closeButton = new Button { Text = "Close" };
+		var closeButton = new Button { Text = L.Close };
 		closeButton.Click += (s, e) => Close();
 
 		// Layout
@@ -224,7 +224,7 @@ public sealed class PatternManagerDialog : Dialog {
 	private void OnEditPattern(object? sender, EventArgs e) {
 		var pattern = GetSelectedPattern();
 		if (pattern == null) {
-			MessageBox.Show(this, "Please select a pattern to edit", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectPatternToEdit, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
@@ -242,13 +242,13 @@ public sealed class PatternManagerDialog : Dialog {
 	private void OnDeletePattern(object? sender, EventArgs e) {
 		var pattern = GetSelectedPattern();
 		if (pattern == null) {
-			MessageBox.Show(this, "Please select a pattern to delete", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectPatternToDelete, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
 		var result = MessageBox.Show(this,
-			$"Are you sure you want to delete '{pattern.Name}'?",
-			"Confirm Delete",
+			string.Format(L.ConfirmDeletePattern, pattern.Name),
+			L.ConfirmDelete,
 			MessageBoxButtons.YesNo,
 			MessageBoxType.Question);
 
@@ -260,7 +260,7 @@ public sealed class PatternManagerDialog : Dialog {
 	private void OnDuplicatePattern(object? sender, EventArgs e) {
 		var pattern = GetSelectedPattern();
 		if (pattern == null) {
-			MessageBox.Show(this, "Please select a pattern to duplicate", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectPatternToDuplicate, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
@@ -283,13 +283,13 @@ public sealed class PatternManagerDialog : Dialog {
 
 	private async void OnApplySelected(object? sender, EventArgs e) {
 		if (_rootDirectory == null) {
-			MessageBox.Show(this, "No directory available for pattern application", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.NoDirectoryAvailable, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		var pattern = GetSelectedPattern();
 		if (pattern == null) {
-			MessageBox.Show(this, "Please select a pattern to apply", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectPatternToApply, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
@@ -298,13 +298,13 @@ public sealed class PatternManagerDialog : Dialog {
 
 	private async void OnApplyAll(object? sender, EventArgs e) {
 		if (_rootDirectory == null) {
-			MessageBox.Show(this, "No directory available for pattern application", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.NoDirectoryAvailable, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		var patterns = _patternManager.GetEnabledPatterns().ToList();
 		if (patterns.Count == 0) {
-			MessageBox.Show(this, "No enabled patterns to apply", "No Patterns", MessageBoxType.Warning);
+			MessageBox.Show(this, L.NoEnabledPatterns, L.NoPatterns, MessageBoxType.Warning);
 			return;
 		}
 
@@ -315,8 +315,8 @@ public sealed class PatternManagerDialog : Dialog {
 		var patternList = patterns.ToList();
 
 		var confirm = MessageBox.Show(this,
-			$"Apply {patternList.Count} pattern(s) to all files?\nThis operation will create a backup.",
-			"Confirm Apply",
+			string.Format(L.ConfirmApplyPatterns, patternList.Count),
+			L.ConfirmApply,
 			MessageBoxButtons.YesNo,
 			MessageBoxType.Question);
 
@@ -324,7 +324,7 @@ public sealed class PatternManagerDialog : Dialog {
 			return;
 
 		_progressBar.Visible = true;
-		_statusLabel.Text = "Applying patterns...";
+		_statusLabel.Text = L.ApplyingPatterns;
 
 		var cts = new CancellationTokenSource();
 		_patternMatcher.ProgressChanged += OnProgressChanged;
@@ -344,54 +344,51 @@ public sealed class PatternManagerDialog : Dialog {
 			var failures = results.Count(r => !r.Success);
 			var filesModified = results.Where(r => r.ReplacementCount > 0).Select(r => r.FilePath).Distinct().Count();
 
-			var message = $"Applied {patternList.Count} pattern(s):\n" +
-				$"- Files modified: {filesModified}\n" +
-				$"- Total replacements: {totalReplacements}\n" +
-				$"- Failures: {failures}";
+			var message = string.Format(L.ApplyResultFormat, patternList.Count, filesModified, totalReplacements, failures);
 
-			MessageBox.Show(this, message, "Apply Complete", MessageBoxType.Information);
+			MessageBox.Show(this, message, L.ApplyComplete, MessageBoxType.Information);
 		} catch (OperationCanceledException) {
-			_statusLabel.Text = "Operation cancelled";
+			_statusLabel.Text = L.OperationCancelled;
 		} catch (Exception ex) {
-			MessageBox.Show(this, $"Error applying patterns: {ex.Message}", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, string.Format(L.ErrorApplyingPatterns, ex.Message), L.Error, MessageBoxType.Error);
 		} finally {
 			_patternMatcher.ProgressChanged -= OnProgressChanged;
 			_progressBar.Visible = false;
-			_statusLabel.Text = "Ready";
+			_statusLabel.Text = L.Ready;
 		}
 	}
 
 	private void OnSearch(object? sender, EventArgs e) {
 		if (_rootDirectory == null) {
-			MessageBox.Show(this, "No directory available for searching", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.NoDirectoryForSearch, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		var pattern = GetSelectedPattern();
 		if (pattern == null) {
-			MessageBox.Show(this, "Please select a pattern to search for", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectPatternToSearch, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
 		_progressBar.Visible = true;
-		_statusLabel.Text = "Searching...";
+		_statusLabel.Text = L.Searching;
 		_patternMatcher.ProgressChanged += OnProgressChanged;
 
 		try {
 			var matches = _patternMatcher.Search(pattern, _rootDirectory);
 
-			var message = $"Found {matches.Count} match(es):\n\n" +
-				string.Join("\n", matches.Take(20).Select(m => $"{m.FilePath} @ {m.Position}"));
+			var matchList = string.Join("\n", matches.Take(20).Select(m => $"{m.FilePath} @ {m.Position}"));
+			var message = string.Format(L.FoundMatches, matches.Count, matchList);
 
 			if (matches.Count > 20) {
-				message += $"\n\n... and {matches.Count - 20} more";
+				message += string.Format(L.AndMore, matches.Count - 20);
 			}
 
-			MessageBox.Show(this, message, "Search Results", MessageBoxType.Information);
+			MessageBox.Show(this, message, L.SearchResults, MessageBoxType.Information);
 		} finally {
 			_patternMatcher.ProgressChanged -= OnProgressChanged;
 			_progressBar.Visible = false;
-			_statusLabel.Text = "Ready";
+			_statusLabel.Text = L.Ready;
 		}
 	}
 
@@ -399,14 +396,14 @@ public sealed class PatternManagerDialog : Dialog {
 		Application.Instance.AsyncInvoke(() => {
 			_progressBar.MaxValue = total;
 			_progressBar.Value = current;
-			_statusLabel.Text = $"Processing: {Path.GetFileName(file)}";
+			_statusLabel.Text = string.Format(L.Processing, Path.GetFileName(file));
 		});
 	}
 
 	private void OnLoad(object? sender, EventArgs e) {
 		using var ofd = new OpenFileDialog {
 			Directory = new Uri(PatternManager.DefaultPatternsDirectory),
-			Filters = { new FileFilter("Pattern Files", "*.json") }
+			Filters = { new FileFilter(L.PatternFiles, "*.json") }
 		};
 
 		if (ofd.ShowDialog(this) == DialogResult.Ok) {
@@ -414,7 +411,7 @@ public sealed class PatternManagerDialog : Dialog {
 				_patternManager.Load(ofd.FileName);
 				RefreshGrid();
 			} catch (Exception ex) {
-				MessageBox.Show(this, $"Failed to load patterns: {ex.Message}", "Error", MessageBoxType.Error);
+				MessageBox.Show(this, string.Format(L.FailedToLoad, ex.Message), L.Error, MessageBoxType.Error);
 			}
 		}
 	}
@@ -429,7 +426,7 @@ public sealed class PatternManagerDialog : Dialog {
 			_patternManager.Save();
 			UpdateTitle();
 		} catch (Exception ex) {
-			MessageBox.Show(this, $"Failed to save patterns: {ex.Message}", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, string.Format(L.FailedToSave, ex.Message), L.Error, MessageBoxType.Error);
 		}
 	}
 
@@ -437,7 +434,7 @@ public sealed class PatternManagerDialog : Dialog {
 		using var sfd = new SaveFileDialog {
 			Directory = new Uri(PatternManager.DefaultPatternsDirectory),
 			FileName = _patternManager.CurrentCollection.Name + ".json",
-			Filters = { new FileFilter("Pattern Files", "*.json") }
+			Filters = { new FileFilter(L.PatternFiles, "*.json") }
 		};
 
 		if (sfd.ShowDialog(this) == DialogResult.Ok) {
@@ -445,22 +442,22 @@ public sealed class PatternManagerDialog : Dialog {
 				_patternManager.Save(sfd.FileName);
 				UpdateTitle();
 			} catch (Exception ex) {
-				MessageBox.Show(this, $"Failed to save patterns: {ex.Message}", "Error", MessageBoxType.Error);
+				MessageBox.Show(this, string.Format(L.FailedToSave, ex.Message), L.Error, MessageBoxType.Error);
 			}
 		}
 	}
 
 	private void OnImport(object? sender, EventArgs e) {
 		using var ofd = new OpenFileDialog {
-			Filters = { new FileFilter("Pattern Files", "*.json") }
+			Filters = { new FileFilter(L.PatternFiles, "*.json") }
 		};
 
 		if (ofd.ShowDialog(this) == DialogResult.Ok) {
 			try {
 				var count = _patternManager.Import(ofd.FileName);
-				MessageBox.Show(this, $"Imported {count} pattern(s)", "Import Complete", MessageBoxType.Information);
+				MessageBox.Show(this, string.Format(L.ImportedPatterns, count), L.ImportComplete, MessageBoxType.Information);
 			} catch (Exception ex) {
-				MessageBox.Show(this, $"Failed to import patterns: {ex.Message}", "Error", MessageBoxType.Error);
+				MessageBox.Show(this, string.Format(L.FailedToImport, ex.Message), L.Error, MessageBoxType.Error);
 			}
 		}
 	}
@@ -476,15 +473,15 @@ public sealed class PatternManagerDialog : Dialog {
 
 		using var sfd = new SaveFileDialog {
 			FileName = "exported_patterns.json",
-			Filters = { new FileFilter("Pattern Files", "*.json") }
+			Filters = { new FileFilter(L.PatternFiles, "*.json") }
 		};
 
 		if (sfd.ShowDialog(this) == DialogResult.Ok) {
 			try {
 				_patternManager.Export(sfd.FileName, selectedIds);
-				MessageBox.Show(this, "Patterns exported successfully", "Export Complete", MessageBoxType.Information);
+				MessageBox.Show(this, L.PatternsExported, L.ExportComplete, MessageBoxType.Information);
 			} catch (Exception ex) {
-				MessageBox.Show(this, $"Failed to export patterns: {ex.Message}", "Error", MessageBoxType.Error);
+				MessageBox.Show(this, string.Format(L.FailedToExport, ex.Message), L.Error, MessageBoxType.Error);
 			}
 		}
 	}

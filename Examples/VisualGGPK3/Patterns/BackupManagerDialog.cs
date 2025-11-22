@@ -27,7 +27,7 @@ public sealed class BackupManagerDialog : Dialog {
 		_patternMatcher = patternMatcher;
 		_fileResolver = fileResolver;
 
-		Title = "Backup Manager";
+		Title = L.BackupManager;
 		MinimumSize = new Size(700, 500);
 		Padding = new Padding(10);
 
@@ -37,19 +37,19 @@ public sealed class BackupManagerDialog : Dialog {
 		};
 
 		_sessionGrid.Columns.Add(new GridColumn {
-			HeaderText = "Name",
+			HeaderText = L.ColName,
 			DataCell = new TextBoxCell { Binding = Binding.Property<SessionGridItem, string>(i => i.Name) },
 			Width = 200
 		});
 
 		_sessionGrid.Columns.Add(new GridColumn {
-			HeaderText = "Date",
+			HeaderText = L.ColDate,
 			DataCell = new TextBoxCell { Binding = Binding.Property<SessionGridItem, string>(i => i.Date) },
 			Width = 150
 		});
 
 		_sessionGrid.Columns.Add(new GridColumn {
-			HeaderText = "Files",
+			HeaderText = L.ColFiles,
 			DataCell = new TextBoxCell { Binding = Binding.Property<SessionGridItem, string>(i => i.FileCount) },
 			Width = 60
 		});
@@ -62,31 +62,31 @@ public sealed class BackupManagerDialog : Dialog {
 		};
 
 		_entryGrid.Columns.Add(new GridColumn {
-			HeaderText = "File Path",
+			HeaderText = L.ColFilePath,
 			DataCell = new TextBoxCell { Binding = Binding.Property<EntryGridItem, string>(i => i.FilePath) },
 			Width = 300
 		});
 
 		_entryGrid.Columns.Add(new GridColumn {
-			HeaderText = "Backup Time",
+			HeaderText = L.ColBackupTime,
 			DataCell = new TextBoxCell { Binding = Binding.Property<EntryGridItem, string>(i => i.BackupTime) },
 			Width = 150
 		});
 
 		// Buttons
-		var restoreSessionButton = new Button { Text = "Restore Session" };
+		var restoreSessionButton = new Button { Text = L.RestoreSession };
 		restoreSessionButton.Click += OnRestoreSession;
 
-		var restoreSelectedButton = new Button { Text = "Restore Selected" };
+		var restoreSelectedButton = new Button { Text = L.RestoreSelected };
 		restoreSelectedButton.Click += OnRestoreSelected;
 
-		var deleteSessionButton = new Button { Text = "Delete Session" };
+		var deleteSessionButton = new Button { Text = L.DeleteSession };
 		deleteSessionButton.Click += OnDeleteSession;
 
-		var cleanupButton = new Button { Text = "Cleanup Old" };
+		var cleanupButton = new Button { Text = L.CleanupOld };
 		cleanupButton.Click += OnCleanup;
 
-		var closeButton = new Button { Text = "Close" };
+		var closeButton = new Button { Text = L.Close };
 		closeButton.Click += (s, e) => Close();
 
 		_statusLabel = new Label { Text = GetStatusText() };
@@ -96,7 +96,7 @@ public sealed class BackupManagerDialog : Dialog {
 			Spacing = 10,
 			HorizontalContentAlignment = HorizontalAlignment.Stretch,
 			Items = {
-				new StackLayoutItem(new Label { Text = "Backup Sessions:", Font = SystemFonts.Bold() }),
+				new StackLayoutItem(new Label { Text = L.BackupSessions, Font = SystemFonts.Bold() }),
 				new StackLayoutItem(new Splitter {
 					Panel1 = _sessionGrid,
 					Panel1MinimumSize = 150,
@@ -153,7 +153,7 @@ public sealed class BackupManagerDialog : Dialog {
 			< 1024 * 1024 => $"{size / 1024.0:F1} KB",
 			_ => $"{size / (1024.0 * 1024.0):F1} MB"
 		};
-		return $"Total backup size: {sizeStr}";
+		return string.Format(L.TotalBackupSize, sizeStr);
 	}
 
 	private void OnSessionSelectionChanged(object? sender, EventArgs e) {
@@ -166,24 +166,24 @@ public sealed class BackupManagerDialog : Dialog {
 
 	private void OnRestoreSession(object? sender, EventArgs e) {
 		if (_fileResolver == null) {
-			MessageBox.Show(this, "File resolver not available", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.FileResolverNotAvailable, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		if (_sessionGrid.SelectedItem is not SessionGridItem item) {
-			MessageBox.Show(this, "Please select a session to restore", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectSessionToRestore, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
 		var session = _backupManager.GetSession(item.Id);
 		if (session == null) {
-			MessageBox.Show(this, "Session not found", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.SessionNotFound, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		var confirm = MessageBox.Show(this,
-			$"Restore all {session.Entries.Count} files from session '{session.Name}'?",
-			"Confirm Restore",
+			string.Format(L.ConfirmRestoreSession, session.Entries.Count, session.Name),
+			L.ConfirmRestore,
 			MessageBoxButtons.YesNo,
 			MessageBoxType.Question);
 
@@ -192,31 +192,31 @@ public sealed class BackupManagerDialog : Dialog {
 
 		var restored = _patternMatcher.RestoreSession(session, _fileResolver);
 		MessageBox.Show(this,
-			$"Restored {restored} of {session.Entries.Count} files",
-			"Restore Complete",
+			string.Format(L.RestoredFiles, restored, session.Entries.Count),
+			L.RestoreComplete,
 			MessageBoxType.Information);
 	}
 
 	private void OnRestoreSelected(object? sender, EventArgs e) {
 		if (_fileResolver == null) {
-			MessageBox.Show(this, "File resolver not available", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.FileResolverNotAvailable, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		if (_sessionGrid.SelectedItem is not SessionGridItem sessionItem) {
-			MessageBox.Show(this, "Please select a session first", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectSessionFirst, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
 		var session = _backupManager.GetSession(sessionItem.Id);
 		if (session == null) {
-			MessageBox.Show(this, "Session not found", "Error", MessageBoxType.Error);
+			MessageBox.Show(this, L.SessionNotFound, L.Error, MessageBoxType.Error);
 			return;
 		}
 
 		var selectedIndices = _entryGrid.SelectedRows.ToList();
 		if (selectedIndices.Count == 0) {
-			MessageBox.Show(this, "Please select files to restore", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectFilesToRestore, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
@@ -232,20 +232,20 @@ public sealed class BackupManagerDialog : Dialog {
 		}
 
 		MessageBox.Show(this,
-			$"Restored {restored} of {selectedIndices.Count} files",
-			"Restore Complete",
+			string.Format(L.RestoredFiles, restored, selectedIndices.Count),
+			L.RestoreComplete,
 			MessageBoxType.Information);
 	}
 
 	private void OnDeleteSession(object? sender, EventArgs e) {
 		if (_sessionGrid.SelectedItem is not SessionGridItem item) {
-			MessageBox.Show(this, "Please select a session to delete", "No Selection", MessageBoxType.Warning);
+			MessageBox.Show(this, L.SelectSessionToDelete, L.NoSelection, MessageBoxType.Warning);
 			return;
 		}
 
 		var confirm = MessageBox.Show(this,
-			$"Delete backup session '{item.Name}'?\nThis cannot be undone.",
-			"Confirm Delete",
+			string.Format(L.ConfirmDeleteSession, item.Name),
+			L.ConfirmDelete,
 			MessageBoxButtons.YesNo,
 			MessageBoxType.Warning);
 
@@ -259,8 +259,8 @@ public sealed class BackupManagerDialog : Dialog {
 
 	private void OnCleanup(object? sender, EventArgs e) {
 		var confirm = MessageBox.Show(this,
-			"Delete old backup sessions, keeping only the 10 most recent?",
-			"Confirm Cleanup",
+			L.ConfirmCleanupOld,
+			L.ConfirmCleanup,
 			MessageBoxButtons.YesNo,
 			MessageBoxType.Question);
 
@@ -270,7 +270,7 @@ public sealed class BackupManagerDialog : Dialog {
 		_backupManager.CleanupOldSessions(10);
 		RefreshSessions();
 		_entryGrid.DataStore = null;
-		MessageBox.Show(this, "Cleanup complete", "Done", MessageBoxType.Information);
+		MessageBox.Show(this, L.CleanupComplete, L.Done, MessageBoxType.Information);
 	}
 
 	private sealed class SessionGridItem {
