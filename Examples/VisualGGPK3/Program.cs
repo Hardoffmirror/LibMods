@@ -14,7 +14,7 @@ public static class Program {
 #endif
 		var app = new Application();
 		var form = new MainWindow(args.Length != 0 ? args[0] : null);
-		app.UnhandledException += (o, e) => MessageBox.Show(app.MainForm, e.ExceptionObject.ToString(), "Error", MessageBoxType.Error);
+		app.UnhandledException += (o, e) => MessageBox.Show(app.MainForm, e.ExceptionObject.ToString(), "Ошибка", MessageBoxType.Error);
 		app.Run(app.MainForm = form);
 	}
 }

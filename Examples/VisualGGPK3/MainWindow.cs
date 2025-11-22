@@ -29,7 +29,7 @@ public sealed class MainWindow : Form {
 	private readonly TreeView GGPKTree = new();
 	private readonly TreeView BundleTree = new();
 #pragma warning restore CS0618
-	private readonly TextArea TextPanel = new() { ReadOnly = true, Text = "This program hasn't been completed yet" };
+	private readonly TextArea TextPanel = new() { ReadOnly = true, Text = "Эта программа ещё не завершена" };
 	private readonly ImageView ImagePanel = new();
 	private readonly GridView DatPanel = new();
 
@@ -96,7 +96,7 @@ public sealed class MainWindow : Form {
 		};
 
 		var loading = new TreeItemCollection() {
-			new TreeItem() { Text = "Loading . . ." }
+			new TreeItem() { Text = "Загрузка . . ." }
 		};
 		GGPKTree.DataStore = loading;
 		BundleTree.DataStore = loading;
@@ -111,7 +111,7 @@ public sealed class MainWindow : Form {
 				using var ofd = new OpenFileDialog() {
 					FileName = "Content.ggpk",
 					Filters = {
-						new("GGPK/Index File", ".ggpk", ".bin"),
+						new("Файл GGPK/Index", ".ggpk", ".bin"),
 						allFilesFilters
 					}
 				};
@@ -145,7 +145,7 @@ public sealed class MainWindow : Form {
 						return Index.ParsePaths();
 					} catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException) { // No _.index.bin
 						Application.Instance.AsyncInvoke(() =>
-							MessageBox.Show(this, ex.GetNameAndMessage(), "Warning", MessageBoxType.Warning));
+							MessageBox.Show(this, ex.GetNameAndMessage(), "Предупреждение", MessageBoxType.Warning));
 						Ggpk = new GGPK(path);
 						return 0;
 					}
@@ -157,13 +157,13 @@ public sealed class MainWindow : Form {
 			var buildTreeTask = Index is null || failed == Index.Files.Count ? Task.FromResult<BundleDirectoryTreeItem>(null!) :
 				Task.Run(() => (BundleDirectoryTreeItem)Index.BuildTree(BundleDirectoryTreeItem.GetFuncCreateInstance(BundleTree), BundleFileTreeItem.CreateInstance, true));
 			if (failed != 0)
-				TextPanel.Text += $"\n\nWarning: There're {failed} files failed to parse the path, your ggpk file may be broken.";
+				TextPanel.Text += $"\n\nПредупреждение: Не удалось обработать путь для {failed} файлов, ваш ggpk файл может быть повреждён.";
 
 			var menu = new ContextMenu(
-				new ButtonMenuItem(OnExtractClicked) { Text = "Extract" },
-				new ButtonMenuItem(OnReplaceClicked) { Text = "Replace" },
-				new ButtonMenuItem(OnCopyPathClicked) { Text = "Copy Path" },
-				new ButtonMenuItem(OnExportDdsClicked) { Text = "Export .dds to .png" }
+				new ButtonMenuItem(OnExtractClicked) { Text = "Извлечь" },
+				new ButtonMenuItem(OnReplaceClicked) { Text = "Заменить" },
+				new ButtonMenuItem(OnCopyPathClicked) { Text = "Копировать путь" },
+				new ButtonMenuItem(OnExportDdsClicked) { Text = "Экспорт .dds в .png" }
 			);
 			GGPKTree.MouseUp += (s, e) => {
 				if (e.Buttons == MouseButtons.Alternate && GGPKTree.GetNodeAt(e.Location) is ITreeItem item) {
@@ -177,7 +177,7 @@ public sealed class MainWindow : Form {
 					menu.Show(BundleTree);
 				}
 			};
-			var menu2 = new ContextMenu(new ButtonMenuItem(OnSaveAsPngClicked) { Text = "Save as png" });
+			var menu2 = new ContextMenu(new ButtonMenuItem(OnSaveAsPngClicked) { Text = "Сохранить как png" });
 			ImagePanel.MouseUp += (s, e) => {
 				if (e.Buttons == MouseButtons.Alternate)
 					menu2.Show(ImagePanel, e.Location);
@@ -217,7 +217,7 @@ public sealed class MainWindow : Form {
 						var span = fileItem.Read().Span;
 #if Windows
 						if (span.Length > 204800) {
-							MessageBox.Show(this, "This text file is too large, only the first 100KB will be shown", "Warning", MessageBoxButtons.OK, MessageBoxType.Warning);
+							MessageBox.Show(this, "Этот текстовый файл слишком большой, будут показаны только первые 100КБ", "Предупреждение", MessageBoxButtons.OK, MessageBoxType.Warning);
 							span = span[..102400];
 						}
 #endif
@@ -303,7 +303,7 @@ public sealed class MainWindow : Form {
 			var span = fi.Read().Span;
 			using (var f = File.OpenHandle(sfd.FileName, FileMode.Create, FileAccess.Write, FileShare.None, FileOptions.None, span.Length))
 				RandomAccess.Write(f, span, 0);
-			MessageBox.Show(this, $"Extracted {span.Length} bytes to\r\n{sfd.FileName}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, $"Извлечено {span.Length} байт в\r\n{sfd.FileName}", "Готово", MessageBoxType.Information);
 		} else if (clickedItem is DirectoryTreeItem di) {
 			var sfd = new SaveFileDialog() {
 				CheckFileExists = false,
@@ -313,7 +313,7 @@ public sealed class MainWindow : Form {
 			if (sfd.ShowDialog(this) != DialogResult.Ok)
 				return;
 			var dir = Directory.CreateDirectory(Path.GetDirectoryName(sfd.FileName)!).FullName;
-			MessageBox.Show(this, $"Extracted {di.Extract(dir)} files to\r\n{dir}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, $"Извлечено {di.Extract(dir)} файлов в\r\n{dir}", "Готово", MessageBoxType.Information);
 		}
 	}
 
@@ -331,17 +331,17 @@ public sealed class MainWindow : Form {
 				return;
 			var b = File.ReadAllBytes(ofd.FileName);
 			fi.Write(b);
-			MessageBox.Show(this, $"Replaced {b.Length} bytes from\r\n{ofd.FileName}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, $"Заменено {b.Length} байт из\r\n{ofd.FileName}", "Готово", MessageBoxType.Information);
 		} else if (clickedItem is DirectoryTreeItem di) {
 			using var ofd = new OpenFileDialog() {
 				CheckFileExists = false,
-				FileName = "{OPEN IN A FOLDER}",
+				FileName = "{ОТКРЫТЬ В ПАПКЕ}",
 				Filters = { allFilesFilters }
 			};
 			if (ofd.ShowDialog(this) != DialogResult.Ok)
 				return;
 			var dir = Path.GetDirectoryName(ofd.FileName)!;
-			MessageBox.Show(this, $"Replaced {di.Replace(dir)} files from\r\n{dir}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, $"Заменено {di.Replace(dir)} файлов из\r\n{dir}", "Готово", MessageBoxType.Information);
 		}
 
 		var bd2 = (GGPKTree.DataStore as GGPKDirectoryTreeItem)?.ChildItems.FirstOrDefault(t => t.Text == "Bundles2");
@@ -364,7 +364,7 @@ public sealed class MainWindow : Form {
 		var sfd = new SaveFileDialog {
 			FileName = (imageName ?? "unnamed") + ".png",
 			Filters = {
-				new("Png File", "*.png"),
+				new("Файл Png", "*.png"),
 				allFilesFilters
 			}
 		};
@@ -377,7 +377,7 @@ public sealed class MainWindow : Form {
 	private void OnExportDdsClicked(object? sender, EventArgs _) {
 		if (clickedItem is FileTreeItem fi) {
 			if (fi.Format != FileTreeItem.DataFormat.DdsImage) {
-				MessageBox.Show(this, "Selected file is not a dds image", "Error", MessageBoxType.Error);
+				MessageBox.Show(this, "Выбранный файл не является dds изображением", "Ошибка", MessageBoxType.Error);
 				return;
 			}
 			var sfd = new SaveFileDialog() {
@@ -391,7 +391,7 @@ public sealed class MainWindow : Form {
 				return;
 			Directory.CreateDirectory(Path.GetDirectoryName(sfd.FileName)!);
 			GetDdsBitmap(fi.Read().Span).Save(sfd.FileName, Eto.Drawing.ImageFormat.Png);
-			MessageBox.Show(this, $"Saved {sfd.FileName}", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, $"Сохранено {sfd.FileName}", "Готово", MessageBoxType.Information);
 		} else if (clickedItem is DirectoryTreeItem di) {
 			var sfd = new SaveFileDialog() {
 				CheckFileExists = false,
@@ -413,13 +413,13 @@ public sealed class MainWindow : Form {
 				}
 			}, ".dds");
 			if (failed == 0)
-				MessageBox.Show(this, $"Exported {count} files to\r\n{dir}", "Done", MessageBoxType.Information);
+				MessageBox.Show(this, $"Экспортировано {count} файлов в\r\n{dir}", "Готово", MessageBoxType.Information);
 			else
-				MessageBox.Show(this, $"Exported {count} files to\r\n{dir}\r\n{failed} files failed!", "Done", MessageBoxType.Warning);
+				MessageBox.Show(this, $"Экспортировано {count} файлов в\r\n{dir}\r\n{failed} файлов не удалось!", "Готово", MessageBoxType.Warning);
 		}
 	}
 
-	private static readonly FileFilter allFilesFilters = new("All Files", "*");
+	private static readonly FileFilter allFilesFilters = new("Все файлы", "*");
 
 	private void OnDragEnter(object? sender, DragEventArgs e) {
 		if (Index is not null && e.Data.ContainsUris)
@@ -444,17 +444,17 @@ public sealed class MainWindow : Form {
 			int count;
 			using (var zip = ZipFile.OpenRead(path))
 				count = sender == GGPKTree
-					? GGPK.Replace((Ggpk ?? throw ThrowHelper.Create<InvalidOperationException>("GGPK replacing is not supported in Steam/Epic mode"))
+					? GGPK.Replace((Ggpk ?? throw ThrowHelper.Create<InvalidOperationException>("Замена GGPK не поддерживается в режиме Steam/Epic"))
 						.Root, zip.Entries)
 					: LibBundle3.Index.Replace(Index!, zip.Entries);
-			MessageBox.Show(this, $"Replaced {count} files!", "Done", MessageBoxType.Information);
+			MessageBox.Show(this, $"Заменено {count} файлов!", "Готово", MessageBoxType.Information);
 		} catch (Exception ex) {
-			MessageBox.Show(this, ex.ToString(), "Error", MessageBoxType.Error);
+			MessageBox.Show(this, ex.ToString(), "Ошибка", MessageBoxType.Error);
 		}
 
 		return;
 	err:
-		MessageBox.Show(this, "Only a single zip file is allowed", "Error", MessageBoxType.Error);
+		MessageBox.Show(this, "Допускается только один zip файл", "Ошибка", MessageBoxType.Error);
 		return;
 	}
 

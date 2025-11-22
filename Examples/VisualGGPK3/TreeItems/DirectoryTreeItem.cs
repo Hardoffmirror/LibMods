@@ -38,7 +38,7 @@ public abstract class DirectoryTreeItem : ITreeItem {
 
 	public virtual bool Initialized { get; protected internal set; }
 
-	public virtual ITreeItem this[int index] => Initialized ? ChildItems[index] : new TreeItem { Text = "Loading . . .", Parent = this };
+	public virtual ITreeItem this[int index] => Initialized ? ChildItems[index] : new TreeItem { Text = "Загрузка . . .", Parent = this };
 	public virtual int Count => Initialized ? ChildItems.Count : 1;
 
 	public virtual bool Expandable => !Initialized || Count > 0;
